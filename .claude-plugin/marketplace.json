@@ -1,0 +1,12 @@
+{
+  "name": "clean-view",
+  "owner": { "name": "pancoh" },
+  "description": "Clean View para o Claude Code: esconde a parte técnica e mostra o plano como um checklist simples.",
+  "plugins": [
+    {
+      "name": "clean-view",
+      "source": "./",
+      "description": "Clean View: esconde chamadas de ferramentas, diffs e saída de comandos, e mostra o plano num checklist acima do prompt."
+    }
+  ]
+}

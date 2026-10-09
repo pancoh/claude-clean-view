@@ -1,0 +1,7 @@
+{
+  "name": "clean-view",
+  "version": "0.1.0",
+  "description": "Clean View: hides tool calls, diffs and command output, and shows a plain checklist of the plan above the prompt.",
+  "author": { "name": "pancoh" },
+  "types": "./types/index.d.ts"
+}
