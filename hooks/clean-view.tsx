@@ -12,8 +12,10 @@ const ALWAYS_ALLOWED = new Set(['ToolSearch', 'TodoWrite', 'TaskCreate', 'TaskUp
 
 const PLACEHOLDER = 'placeholder-'
 const METER = 10
-// The widest row label: Próximo.
+// The widest row label: Próximo. Every label gets this width so the meters line up.
 const LABEL = 7
+// Right margin of the checklist rows, in cells.
+const MARGIN = 4
 const MAX_NAME = 40
 const COLLAPSE_MS = 5000
 
@@ -477,7 +479,6 @@ export function registerCleanView(on: On) {
     if (!isOn || c.phase === 'idle') return next(e)
     const { Box, Text } = $.ui.resolve(e)
     const frame = await read($, tick)
-    const columns = Math.max(30, e.props.bodyColumns)
 
     const now = Date.now()
     const took = duration((c.finishedAt ?? now) - (c.startedAt ?? now))
@@ -485,7 +486,7 @@ export function registerCleanView(on: On) {
 
     if (c.phase === 'done' && c.isCollapsed) {
       return (
-        <Text wrap="truncate">
+        <Text wrap="wrap">
           <Text color="success">✓ Tudo pronto</Text>
           <Text dimColor>{` · ${title} · levou ${took}`}</Text>
         </Text>
@@ -494,32 +495,33 @@ export function registerCleanView(on: On) {
 
     const header =
       c.phase === 'needs-you' ? (
-        <Text wrap="truncate">
+        <Text wrap="wrap">
           <Text inverse bold color="warning">
             {' Precisa de você '}
           </Text>
           <Text>{` ${c.needsYouReason ?? ''}`}</Text>
         </Text>
       ) : c.phase === 'stuck' ? (
-        <Text wrap="truncate" color="warning">{`⚠ Travado: ${c.stuckReason ?? ''}`}</Text>
+        <Text wrap="wrap" color="warning">{`⚠ Travado: ${c.stuckReason ?? ''}`}</Text>
       ) : c.phase === 'stopped' ? (
-        <Text wrap="truncate">{`■ Parado · ${title} · você apertou Esc`}</Text>
+        <Text wrap="wrap">{`■ Parado · ${title} · você apertou Esc`}</Text>
       ) : c.phase === 'done' ? (
-        <Text wrap="truncate">
+        <Text wrap="wrap">
           <Text color="success" bold>
             ✓ Tudo pronto
           </Text>
           <Text>{` · ${title} · levou ${took}`}</Text>
         </Text>
       ) : (
-        <Text wrap="truncate">
+        <Text wrap="wrap">
           <Text bold>{title}</Text>
           <Text dimColor>{` · ${took}`}</Text>
         </Text>
       )
 
-    // Icon, gap, name, gap, meter, gap, label: the name takes what is left.
-    const nameWidth = Math.max(8, columns - 1 - METER - LABEL - 3)
+    // The name takes what is left of the row and wraps instead of being cut. The row
+    // keeps a right margin: the desktop app draws its padding inside the width the
+    // engine reports, and without it the label runs off the edge.
     let upcomingSeen = 0
     const rows = c.tasks.map(t => {
       const { filled, sweep } = meter(t, frame)
@@ -529,15 +531,16 @@ export function registerCleanView(on: On) {
       const label =
         t.status === 'done' ? 'Feito' : isActive ? (t.hasReported ? `${t.percent}%` : 'Fazendo') : upcomingSeen++ === 0 ? 'Próximo' : 'Depois'
       return (
-        <Box key={`task-${t.id}`} gap={1}>
+        <Box key={`task-${t.id}`} gap={1} paddingRight={MARGIN}>
           <Text color={t.status === 'done' ? 'success' : isActive ? 'claude' : undefined} dimColor={t.status === 'upcoming'}>
             {icon}
           </Text>
-          <Box width={nameWidth} flexShrink={0}>
-            <Text wrap="truncate" bold={isActive} dimColor={!isActive}>
+          <Box flexGrow={1} flexShrink={1} minWidth={8}>
+            <Text wrap="wrap" bold={isActive} dimColor={!isActive}>
               {t.name}
             </Text>
           </Box>
+          <Box flexShrink={0}>
           <Text>
             {cells.map((isFilled, i) =>
               isFilled ? (
@@ -546,12 +549,15 @@ export function registerCleanView(on: On) {
                 </Text>
               ) : (
                 <Text key={`cell-${i}`} dimColor>
-                  ░
+                  █
                 </Text>
               ),
             )}
           </Text>
-          <Text dimColor={!isActive}>{label}</Text>
+          </Box>
+          <Box width={LABEL} flexShrink={0}>
+            <Text dimColor={!isActive}>{label}</Text>
+          </Box>
         </Box>
       )
     })
