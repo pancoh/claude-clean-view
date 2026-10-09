@@ -447,15 +447,25 @@ export function registerCleanView(on: On) {
     (await read($, enabled)) ? next({ ...e, props: { ...e.props, hint: '' } }) : next(e),
   )
 
-  // The switch, at the right of the hint row under the prompt.
-  on('ui.render', { component: 'PromptHint' }, async ($, e) => {
+  // The switch, at the right of the hint row under the prompt. Another mod's row
+  // (the Zen button) stays, with this switch after it.
+  on('ui.render', { component: 'PromptHint' }, async ($, e, next) => {
     const { Box, Text, Button } = $.ui.resolve(e)
     const isOn = await read($, enabled)
-    return (
-      <Box justifyContent="space-between" flexGrow={1} gap={1}>
+    const below = await next(e)
+    const row =
+      below.type === 'engine' ? (
         <Text dimColor wrap="truncate">
           {oneLine(e.props.hint)}
         </Text>
+      ) : (
+        <Box flexGrow={1} flexShrink={1}>
+          {below}
+        </Box>
+      )
+    return (
+      <Box justifyContent="space-between" flexGrow={1} gap={1}>
+        {row}
         <Button
           key="clean-view-toggle"
           plain

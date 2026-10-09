@@ -23,6 +23,7 @@ const band = {
 const engine = (on: On) => {
   mock.store(on)
   mock.clock(on)
+  on('ui.render', { component: 'PromptHint' }, () => ({ type: 'engine', ref: 0 }))
   on('ui.render', ($, e) => $.ui.resolve(e).Text({ children: 'engine' }))
   on('model.complete', () => ({ value: { isAnswered: true, text: 'Build my landing page', usage: {} } }) as never)
   on('tool.call', () => ({ result: {} }) as never)
@@ -72,6 +73,18 @@ describe('checklist', () => {
       expect(await corner.find({ text: /\? for shortcuts/ })).toBeDefined()
       await corner.unmount()
     }
+  })
+
+  test('another mod\'s button on the hint row stays, with the switch after it', async ($, on) => {
+    on('ui.render', { component: 'PromptHint' }, ($, e) => {
+      const { Box, Text, Button } = $.ui.resolve(e)
+      return Box({ children: [Text({ children: '? for shortcuts' }), Button({ key: 'zen-toggle', label: '○ zen', onPress: () => {} })] })
+    })
+    engine(on)
+    const corner = await $.ui.mount({ plugin: PLUGIN, surface: 'terminal', ...hint })
+    expect(await corner.find({ key: 'zen-toggle' })).toBeDefined()
+    expect(await corner.find({ key: 'clean-view-toggle' })).toBeDefined()
+    expect(await corner.find({ text: /\? for shortcuts/ })).toBeDefined()
   })
 
   test('a permission prompt shows Precisa de você', async ($, on) => {
